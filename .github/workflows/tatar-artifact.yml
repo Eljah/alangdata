@@ -24,6 +24,7 @@ jobs:
 
       - name: Build tat.traineddata
         run: |
+          mkdir -p build
           combine_lang_model \
             --input_unicharset tat/tat.unicharset \
             --script_dir . \

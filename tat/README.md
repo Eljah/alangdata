@@ -27,6 +27,7 @@
 тиеш):
 
 ```bash
+mkdir -p build
 combine_lang_model \
   --input_unicharset tat/tat.unicharset \
   --script_dir . \
