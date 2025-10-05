@@ -1,4 +1,4 @@
-name: Tatar recognition artifact
+name: Build Tatar traineddata
 
 on:
   push:
@@ -17,22 +17,36 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Prepare Tatar test data archive
+      - name: Install Tesseract dependencies
         run: |
-          tar -czf tatar-test-data.tar.gz tat
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends tesseract-ocr libtesseract-dev
 
-      - name: Upload artifact
+      - name: Build tat.traineddata
+        run: |
+          combine_lang_model \
+            --input_unicharset tat/tat.unicharset \
+            --script_dir . \
+            --words tat/tat.wordlist \
+            --numbers tat/tat.numbers \
+            --puncs tat/tat.punc \
+            --output_dir build \
+            --lang tat \
+            --version_str "${{ github.sha }}"
+          ls -l build/tat
+
+      - name: Upload traineddata artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tatar-recognition-test-data
-          path: tatar-test-data.tar.gz
+          name: tat-traineddata
+          path: build/tat/tat.traineddata
           retention-days: 7
 
-      - name: Delete old artifacts
+      - name: Delete old traineddata artifacts
         uses: actions/github-script@v7
         with:
           script: |
-            const artifactName = 'tatar-recognition-test-data';
+            const artifactName = 'tat-traineddata';
             const artifacts = await github.paginate(
               github.rest.actions.listArtifactsForRepo,
               {
@@ -43,9 +57,7 @@ jobs:
             );
             const related = artifacts
               .filter((artifact) => artifact.name === artifactName)
-              .sort(
-                (a, b) => new Date(b.created_at) - new Date(a.created_at)
-              );
+              .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             if (related.length <= 1) {
               core.info(`Only ${related.length} artifact(s) found; nothing to delete.`);
               return;
